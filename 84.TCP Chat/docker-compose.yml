@@ -1,8 +1,0 @@
-version: '2.1'
-
-services:
-  tcpclient:
-    image: tcpclient
-    build:
-      context: .\TCP Chat
-      dockerfile: Dockerfile
