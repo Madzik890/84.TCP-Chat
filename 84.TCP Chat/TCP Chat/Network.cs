@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.Sockets;
+using Encryptor;
 
 namespace TCP_NET
 {
@@ -16,15 +17,33 @@ namespace TCP_NET
 
     class Client : TCP_Client
     {
+        private char[] alphabet = { //alphabet for cipher
+            'a','b','c','d','e','f',
+            'g','h','i','j','k',
+            'l','m','n','o','p',
+            'q','r','s','t','u',
+            'v','w','x','y','z',
+            'A','B','C','D','E','F',
+            'G','H','I','J','K',
+            'L','M','N','O','P',
+            'Q','R','S','T','U',
+            'V','W','X','Y','Z',
+            ' ',',','.','<','>',
+            ';',':','[',']','{',
+            '!','@','#','$','%',
+            '^','&','*','(',')',
+            '_','-','+','=','~',
+            '`'};
         private int port = 1045;//default port
         private string ip = "127.0.0.1";//internal computer ip
         private string nickname = "default_nick";//default nickname
         private string message = "";//string for message
+        private Caesar encyptor = new Caesar(8);//creating new ceasar encryptor
         private TcpClient client = new TcpClient();
         private NetworkStream nwStream;
 
-        public Client(string ip, string nickname, int port) { this.ip = ip; this.nickname = nickname; this.port = port; }
-        public Client() { }//default constructor
+        public Client(string ip, string nickname, int port) { encyptor.ChangeAlphabet(alphabet);/*adding new alphabet*/ this.ip = ip; this.nickname = nickname; this.port = port; }
+        public Client() { encyptor.ChangeAlphabet(alphabet); }//default constructor
         ~Client() { client.Close(); nwStream.Close(); }
                                                         //operation on
         public string server_ip { set { ip = value; } get { return ip; } }//string of ip
@@ -67,7 +86,7 @@ namespace TCP_NET
                 switch (key.Key)//switch for keyboard controls
                 {
                     case ConsoleKey.Enter:
-                        byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(message);//encoding message to ascii
+                        byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(encyptor.Encrypt(message));//encoding message to ascii + encrypting
                         nwStream.Write(bytesToSend, 0, bytesToSend.Length);//sending a message to server
                         ClearCurrentConsoleLine();//clearing a line for message
                         Console.WriteLine("You:" + message + " | " + DateTime.Now.ToLongTimeString());
@@ -96,9 +115,27 @@ namespace TCP_NET
                 byte[] bytesToRead = new byte[client.ReceiveBufferSize];//creating data buffer
                 int bytesRead = nwStream.Read(bytesToRead, 0, client.ReceiveBufferSize);//reading data from buffer
                 ClearCurrentConsoleLine();
-                Console.WriteLine(Encoding.ASCII.GetString(bytesToRead, 0, bytesRead) + " | " + DateTime.Now.ToLongTimeString());//Writing data
+                Console.WriteLine(encyptor.Decrypt(Encoding.ASCII.GetString(bytesToRead, 0, bytesRead)) + " | " + DateTime.Now.ToLongTimeString());//Writing data
                 Console.Write("Your message:" + message);
             }
+        }
+        public void Disconnect()//disconnecting from the server
+        {
+            byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes("$#@!disconnect");//encoding disconnect command
+            nwStream.Write(bytesToSend, 0, bytesToSend.Length);//sending command to server
+            check:
+            if (nwStream.DataAvailable)
+            {
+                byte[] bytesToRead = new byte[client.ReceiveBufferSize];//creating data buffer
+                int bytesRead = nwStream.Read(bytesToRead, 0, client.ReceiveBufferSize);//reading data from buffer
+                if (Encoding.ASCII.GetString(bytesToRead, 0, bytesRead) == "disconnected")//checking returned command
+                {
+                    nwStream.Close();//closing connection
+                    client.Close();//closing connection
+                }
+            }
+            else
+                goto check;
         }
         static public void ClearCurrentConsoleLine()//clearing actual console line
         {
@@ -110,7 +147,7 @@ namespace TCP_NET
 
         private void SendNickname(string nickname)
         {
-            byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes("$#@!set_nick:" + nickname);//encoding nickname to ascii
+            byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes("$#@!set_nick:" + encyptor.Encrypt(nickname));//encoding nickname to ascii
             nwStream.Write(bytesToSend, 0, bytesToSend.Length);//sending nick to server
         }
     }

@@ -29,24 +29,19 @@ private:
 	struct Clients
 	{
 	protected:
-		std::string ip;//if of client
 		std::string nickname = "default";//nickname user
-		unsigned long long port = port;//port of client
 		bool nickname_was_set = false;
+		bool disconnected = false;
 	public:
-		Clients(std::string ip, unsigned long long port) :socket(new sf::TcpSocket), ip(ip), port(port) { socket->setBlocking(false); /*disable blocking socket*/ };//constructor
-		Clients() :socket(new sf::TcpSocket) { socket->setBlocking(false);/*disable blocking socket*/ };//copy constructor
+		Clients() :socket(new sf::TcpSocket) { socket->setBlocking(false);/*disable blocking socket*/ };//constructor
 		Clients(Clients&& source) :socket(std::move(source.socket)) { socket->setBlocking(false); /*disable blocking socket*/  };//move constructor
 		Clients& operator= (Clients&& source) { socket = std::move(source.socket); socket->setBlocking(false); /*disable blocking socket*/ return *this; };// Move assignment operator
 
-		
 		std::unique_ptr<sf::TcpSocket> socket;//unique_ptr of socket
-		const std::string getIP() { return ip; }//returning port
 		std::string getNickname() { return nickname; }//returning nickname
 		bool nickWasSet() { return nickname_was_set; }//returning status of nickname
-		unsigned long long getPort() { return port; }//returning port
-		void setIP(std::string string) { this->ip = string; }//setting new ip
-		void setPort(unsigned long long port) { this->port = port; }//setting new port
+		bool wasDisconnected() { return disconnected; };//returning status of connection
+		void disconnect() { socket->disconnect(); disconnected = true; }//disconnect client from server
 		void setNickname(std::string nickname) { this->nickname = nickname; nickname_was_set = true; }//setting new nickname
 	};
 

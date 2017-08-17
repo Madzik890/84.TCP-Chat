@@ -3,6 +3,7 @@
 #include <SFML\Network.hpp>
 #include <windows.h>
 
+
 Server::Server(unsigned long long port):port(port)
 {
 	listener.setBlocking(false);//disable blocking program
@@ -73,12 +74,21 @@ void Server::main()//main stuff function
 				std::cout << "User " << it_clients.socket->getRemoteAddress() << ":" << it_clients.socket->getRemotePort() << " now is " << it_clients.getNickname() << std::endl;//communicate status 
 			}
 			else
+			if (temp.find("$#@!disconnect") != std::string::npos)//if found disconnect command
+			{
+				char temp_command[] = "disconnected";//command sending for user to 
+				it_clients.socket->send(temp_command,sizeof(temp_command));//sending answer
+				it_clients.disconnect();
+				std::cout <<"User disconnected" << std::endl;//log
+			}
+			else
 			{
 				send_to_other(data,it_clients);//sending to other message
 				std::cout << "Received '" << data << "' from: " << it_clients.socket->getRemoteAddress().toString() <<":"<< it_clients.socket->getRemotePort() << std::endl;//drawing message on serve log
 			}
 		}
 	}
+	clients.remove_if([](Clients &client) {return client.wasDisconnected(); });//lambda function to checking connection status
 	mutex.unlock();
 }
 
@@ -88,8 +98,8 @@ void Server::send_to_other(char data[100],Clients &client)//function witch sendi
 	{
 		if (it_client.socket->getRemotePort() != client.socket->getRemotePort())//checking whether user isn't this same who send message
 		{
-			std::string string = client.getNickname() + ":" + data;
-			it_client.socket->send(string.c_str(),string.size());
+			std::string string = client.getNickname() + "%" + data; // & symbol for decrypting message on client site
+			it_client.socket->send(string.c_str(),string.size());//sending message
 		}
 	}
 }
@@ -100,10 +110,9 @@ void Server::find_connection()//function awaiting for new connection
 	if (listener.accept(*clients.back().socket) == sf::Socket::Done)
 	{
 		//creating new user
-		clients.back().setIP(clients.back().socket->getRemoteAddress().toString());
-		clients.back().setPort(clients.back().socket->getRemotePort());
-		std::cout << "Someone connected with ip: " << clients.back().getIP() << " and port: " << clients.back().getPort() << std::endl;
+		std::cout << "Someone connected with ip: " << clients.back().socket->getRemoteAddress() << " and port: " << clients.back().socket->getRemotePort() << std::endl;
 		clients.push_back(Server::Clients());//add new user
 	}
 	mutex.unlock();
 }
+
