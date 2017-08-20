@@ -33,7 +33,9 @@ namespace TCP_NET
             '!','@','#','$','%',
             '^','&','*','(',')',
             '_','-','+','=','~',
-            '`'};
+            '`','1','2','3','4',
+            '5','6','7','8','9'
+        };
         private int port = 1045;//default port
         private string ip = "127.0.0.1";//internal computer ip
         private string nickname = "default_nick";//default nickname
@@ -114,28 +116,41 @@ namespace TCP_NET
             {
                 byte[] bytesToRead = new byte[client.ReceiveBufferSize];//creating data buffer
                 int bytesRead = nwStream.Read(bytesToRead, 0, client.ReceiveBufferSize);//reading data from buffer
-                ClearCurrentConsoleLine();
-                Console.WriteLine(encyptor.Decrypt(Encoding.ASCII.GetString(bytesToRead, 0, bytesRead)) + " | " + DateTime.Now.ToLongTimeString());//Writing data
-                Console.Write("Your message:" + message);
+                if (Encoding.ASCII.GetString(bytesToRead, 0, bytesRead).Contains("$#@!disconnect"))//if found special command to disconnect
+                {
+                    client.Close();//////////////////////
+                    nwStream.Close();//closing connection
+                    Console.WriteLine("Server disconnected you from server| reason: AFK");//writing log to user
+                }
+                else
+                {
+                    ClearCurrentConsoleLine();
+                    Console.WriteLine(Encoding.ASCII.GetString(bytesToRead, 0, bytesRead));
+                    Console.WriteLine(encyptor.Decrypt(Encoding.ASCII.GetString(bytesToRead, 0, bytesRead)) + " | " + DateTime.Now.ToLongTimeString());//Writing data
+                    Console.Write("Your message:" + message);
+                }
             }
         }
         public void Disconnect()//disconnecting from the server
         {
-            byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes("$#@!disconnect");//encoding disconnect command
-            nwStream.Write(bytesToSend, 0, bytesToSend.Length);//sending command to server
-            check:
-            if (nwStream.DataAvailable)
+            if (client.Connected)//checking to elimination errors
             {
-                byte[] bytesToRead = new byte[client.ReceiveBufferSize];//creating data buffer
-                int bytesRead = nwStream.Read(bytesToRead, 0, client.ReceiveBufferSize);//reading data from buffer
-                if (Encoding.ASCII.GetString(bytesToRead, 0, bytesRead) == "disconnected")//checking returned command
+                byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes("$#@!disconnect");//encoding disconnect command
+                nwStream.Write(bytesToSend, 0, bytesToSend.Length);//sending command to server
+                check:
+                if (nwStream.DataAvailable)
                 {
-                    nwStream.Close();//closing connection
-                    client.Close();//closing connection
+                    byte[] bytesToRead = new byte[client.ReceiveBufferSize];//creating data buffer
+                    int bytesRead = nwStream.Read(bytesToRead, 0, client.ReceiveBufferSize);//reading data from buffer
+                    if (Encoding.ASCII.GetString(bytesToRead, 0, bytesRead) == "disconnected")//checking returned command
+                    {
+                        nwStream.Close();//closing connection
+                        client.Close();//closing connection
+                    }
                 }
+                else
+                    goto check;
             }
-            else
-                goto check;
         }
         static public void ClearCurrentConsoleLine()//clearing actual console line
         {

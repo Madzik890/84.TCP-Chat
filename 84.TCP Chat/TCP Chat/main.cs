@@ -36,7 +36,7 @@ namespace TCP_Client
 
         static bool ConsoleEventCallback(int eventType)//checking whether program isn't closing
         {
-            if (eventType == 2)//if is 
+            if (eventType == 2)//if console is closing
             {
                 client.Disconnect();//client disconnecting from the server
             }

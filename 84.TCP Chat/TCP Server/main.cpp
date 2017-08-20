@@ -9,10 +9,15 @@ int main(int argc, char *argv[])
 {
 	Server server(START_PORT);
 	server.InIt(true);
+	sf::Clock clock;
+
 	while (true)
 	{	
-		server.Main();
-		Sleep(10);
+		if (clock.getElapsedTime().asSeconds() >= 1 / 60)//Network service checked every 1/60 sec.
+		{
+			server.Main();
+			clock.restart();
+		}
 	}
 	return 0;
 }

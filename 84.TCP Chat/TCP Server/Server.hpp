@@ -37,12 +37,18 @@ private:
 		Clients(Clients&& source) :socket(std::move(source.socket)) { socket->setBlocking(false); /*disable blocking socket*/  };//move constructor
 		Clients& operator= (Clients&& source) { socket = std::move(source.socket); socket->setBlocking(false); /*disable blocking socket*/ return *this; };// Move assignment operator
 
+		sf::Clock clock;//clock for checking away from keyboard client | if user is ask longer than 5 minute,server disconnecting him 
 		std::unique_ptr<sf::TcpSocket> socket;//unique_ptr of socket
 		std::string getNickname() { return nickname; }//returning nickname
 		bool nickWasSet() { return nickname_was_set; }//returning status of nickname
 		bool wasDisconnected() { return disconnected; };//returning status of connection
-		void disconnect() { socket->disconnect(); disconnected = true; }//disconnect client from server
+		int  getAFK() { return afk_minute; }//returning number minute afk
+		void disconnect() { char temp[] = "$#@!disconnect"; socket->send(temp, sizeof(temp)); socket->disconnect(); disconnected = true; }//disconnect client from server
 		void setNickname(std::string nickname) { this->nickname = nickname; nickname_was_set = true; }//setting new nickname
+		void addMinuteAFK() { ++afk_minute; };//increase minute of afk
+		void zeroMinuteAFK() { afk_minute = 0; }//reset variable afk_minute
+	private:
+		unsigned int afk_minute = 0;//minute of non message
 	};
 
 	unsigned long long port = default_port;//port of server

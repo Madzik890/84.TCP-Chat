@@ -3,7 +3,6 @@
 #include <SFML\Network.hpp>
 #include <windows.h>
 
-
 Server::Server(unsigned long long port):port(port)
 {
 	listener.setBlocking(false);//disable blocking program
@@ -85,6 +84,20 @@ void Server::main()//main stuff function
 			{
 				send_to_other(data,it_clients);//sending to other message
 				std::cout << "Received '" << data << "' from: " << it_clients.socket->getRemoteAddress().toString() <<":"<< it_clients.socket->getRemotePort() << std::endl;//drawing message on serve log
+			}
+		}
+		else//if user didn't send a message
+		{
+			if (it_clients.clock.getElapsedTime().asSeconds() >= 5 && it_clients.socket->getRemotePort() != NULL)
+			{
+				if (it_clients.getAFK() >= 2)
+				{
+					std::cout << "User" << it_clients.socket->getRemoteAddress() << ":" << it_clients.socket->getRemotePort() << "was kicked from the server" << std::endl;
+					it_clients.disconnect();//disconnecting user
+				}
+				else
+					it_clients.addMinuteAFK();//increasing a number of afk
+				it_clients.clock.restart();
 			}
 		}
 	}
